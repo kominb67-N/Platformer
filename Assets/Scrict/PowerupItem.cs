@@ -8,6 +8,9 @@ public class PowerupItem : MonoBehaviour
     public float scaleMultiplier = 2f; // ขยายขนาดตัว (2 เท่า)
     public float speedMultiplier = 2f; // เพิ่มความเร็ว (2 เท่า)
 
+    [Header("ตั้งค่าการกระโดด")]
+    public int extraJumps = 1;         // จำนวนการกระโดดที่เพิ่มขึ้น (เช่น +1 คือกระโดดกลางอากาศเพิ่มได้อีก 1 ครั้ง)
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         // ตรวจสอบว่าคนที่มาชนคือผู้เล่นหรือไม่
@@ -39,13 +42,14 @@ public class PowerupItem : MonoBehaviour
         Vector3 originalScale = player.transform.localScale;
         player.transform.localScale = originalScale * scaleMultiplier;
 
-        // 3. เพิ่มความเร็ว 2 เท่า 
-        // ⚠️ สำคัญ: ต้องแก้คำว่า PlayerMovement เป็น "ชื่อสคริปต์เดิน" ของคุณ
+        // 3. เพิ่มความเร็ว 2 เท่า และ เพิ่มจำนวนการกระโดด
         PlayerController movementScript = player.GetComponent<PlayerController>();
         if (movementScript != null)
         {
-            // ⚠️ สำคัญ: ต้องแก้คำว่า moveSpeed เป็น "ชื่อตัวแปรความเร็ว" ของคุณ
             movementScript.moveSpeed *= speedMultiplier;
+
+            // ⚠️ สำคัญ: เปลี่ยนคำว่า maxJumps ให้ตรงกับ "ชื่อตัวแปรจำนวนการกระโดด" ในสคริปต์ PlayerController ของคุณ
+            movementScript.maxJumps += extraJumps;
         }
 
         // ==========================================
@@ -66,10 +70,13 @@ public class PowerupItem : MonoBehaviour
         // 2. หดตัวกลับเท่าเดิม
         player.transform.localScale = originalScale;
 
-        // 3. ลดความเร็วกลับเท่าเดิม
+        // 3. ลดความเร็ว และ ลดจำนวนการกระโดด กลับเท่าเดิม
         if (movementScript != null)
         {
             movementScript.moveSpeed /= speedMultiplier;
+
+            // ⚠️ สำคัญ: เปลี่ยนคำว่า maxJumps ให้ตรงกับด้านบน
+            movementScript.maxJumps -= extraJumps;
         }
 
         // ทำลายไอเทมชิ้นนี้ทิ้งออกจากฉากอย่างสมบูรณ์

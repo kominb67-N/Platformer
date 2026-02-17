@@ -40,7 +40,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // บรรทัดนี้จะบอกคุณใน Console ว่าสถานะพื้นเป็นอย่างไร
-        Debug.Log("Is Grounded: " + isGrounded + " | Jump Count: " + jumpCount);
+//Debug.Log("Is Grounded: " + isGrounded + " | Jump Count: " + jumpCount);
     }
 
     void FixedUpdate()
