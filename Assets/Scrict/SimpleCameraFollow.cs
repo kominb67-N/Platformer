@@ -7,6 +7,10 @@ public class SimpleCameraFollow : MonoBehaviour
     public float yOffset = 1.5f;
     public float smoothTime = 0.25f;
 
+    [Header("ระบบตามตัวตอนกระเด็น (ใหม่!)")]
+    public float catchUpDistance = 3.0f; // ถ้าระยะห่างเกินกี่เมตร ให้กล้องรีบตาม
+    public float fastSmoothTime = 0.05f; // ความเร็วตอนสับเกียร์ตาม (ยิ่งน้อยยิ่งไว)
+
     [Header("ระบบซูมอัตโนมัติ (Idle Zoom)")]
     public float defaultSize = 5f;
     public float zoomInSize = 3.5f;
@@ -56,8 +60,18 @@ public class SimpleCameraFollow : MonoBehaviour
         {
             Vector3 targetPos = new Vector3(player.position.x, player.position.y + yOffset, -10f);
 
-            // คำนวณตำแหน่งหลัก
-            Vector3 smoothPosition = Vector3.SmoothDamp(transform.position, targetPos, ref currentVelocity, smoothTime);
+            // *** อัปเกรด: เช็กระยะห่างเพื่อสับเกียร์กล้อง ***
+            float distance = Vector2.Distance(transform.position, targetPos);
+            float currentSmoothTime = smoothTime; // ค่าเริ่มต้นคือตามปกติ
+
+            // ถ้าระยะห่างมากเกินไป (โดนดีด โดนสปริง)
+            if (distance > catchUpDistance)
+            {
+                currentSmoothTime = fastSmoothTime; // สับเกียร์ตามไวแสง!
+            }
+
+            // คำนวณตำแหน่งหลัก โดยใช้ currentSmoothTime ที่เช็กมาแล้ว
+            Vector3 smoothPosition = Vector3.SmoothDamp(transform.position, targetPos, ref currentVelocity, currentSmoothTime);
 
             // บวกแรงสั่นเข้าไป
             if (shakeTimeRemaining > 0)
@@ -97,9 +111,9 @@ public class SimpleCameraFollow : MonoBehaviour
         shakePower = power;
     }
 
-    // *** ฟังก์ชันใหม่สำหรับเห็ดอ้วน ***
+    // *** ฟังก์ชันสำหรับเห็ดอ้วน ***
     public void SetZoom(float newSize)
     {
-        defaultSize = newSize; // เปลี่ยนค่าปกติให้กว้างขึ้น
+        defaultSize = newSize;
     }
 }

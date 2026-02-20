@@ -25,6 +25,7 @@ public class EnemyBehavior : MonoBehaviour
 
     private Rigidbody2D rb;
     private bool canJump = true;
+    public AudioClip deathSound;
 
     void Start()
     {
@@ -87,6 +88,7 @@ public class EnemyBehavior : MonoBehaviour
     IEnumerator SquashAndDie()
     {
         isDead = true;
+        if (deathSound != null) AudioSource.PlayClipAtPoint(deathSound, transform.position); // เล่นเสียง ณ จุดตาย
         rb.linearVelocity = Vector2.zero;
         GetComponent<Collider2D>().enabled = false;
         transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 0.2f, 1f);

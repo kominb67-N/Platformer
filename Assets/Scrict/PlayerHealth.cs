@@ -4,33 +4,32 @@ using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("ค่าพลังชีวิต")]
+    [Header("1. ค่าพลังชีวิต")]
     public int maxHealth = 3;
     public int currentHealth;
 
-    [Header("ระบบอมตะ (I-Frames)")]
+    [Header("2. ระบบอมตะ (I-Frames)")]
     public float invincibilityDuration = 1.5f;
     private float invincibilityTimer;
     public bool isInvincible = false;
 
-    [Header("UI & Effects")]
-    public GameObject[] hearts;
-    public Image redFlashImage;
-    public SimpleCameraFollow cam;
+    [Header("3. UI & Effects")]
+    public GameObject[] hearts;      // ลากรูปหัวใจใน UI มาใส่
+    public Image redFlashImage;     // ลาก Image สีแดงเต็มจอมาใส่
+    public SimpleCameraFollow cam;  // ลากกล้องมาใส่เพื่อให้จอสั่น
 
-    [Header("เสียงประกอบ")] // --- ส่วนที่เพิ่มมาใหม่ ---
-    public AudioClip deathSound; // ลากไฟล์เสียงมาใส่ตรงนี้
-    public AudioClip hurtSound;  // (แถม) เสียงตอนโดนดาเมจ
+    [Header("4. เสียงประกอบ")]
+    public AudioClip deathSound;
+    public AudioClip hurtSound;
     private AudioSource audioSource;
 
     private SpriteRenderer playerSprite;
+    private bool isDead = false;
 
     void Start()
     {
         currentHealth = maxHealth;
         playerSprite = GetComponent<SpriteRenderer>();
-
-        // ดึง AudioSource ที่เราเพิ่งสร้างมาเก็บไว้ใช้งาน
         audioSource = GetComponent<AudioSource>();
 
         UpdateHealthUI();
@@ -38,7 +37,7 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
-        // กะพริบตัวตอนอมตะ
+        // เอฟเฟกต์กะพริบตัวตอนอมตะ
         if (invincibilityTimer > 0 && currentHealth > 0 && Time.timeScale > 0)
         {
             invincibilityTimer -= Time.deltaTime;
@@ -62,20 +61,25 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isInvincible || invincibilityTimer > 0 || currentHealth <= 0) return;
+        // ถ้าอมตะอยู่ หรือตายไปแล้ว ไม่ต้องรับดาเมจ
+        if (isInvincible || invincibilityTimer > 0 || currentHealth <= 0 || isDead) return;
 
         currentHealth -= damage;
         invincibilityTimer = invincibilityDuration;
         UpdateHealthUI();
 
-        // เล่นเสียงตอนเจ็บ (ถ้ามี)
+        // เล่นเสียงเจ็บ
         if (audioSource != null && hurtSound != null)
             audioSource.PlayOneShot(hurtSound);
 
+        // จอสั่นและจอแดง
         if (cam != null) cam.TriggerShake(0.2f, 0.15f);
         if (redFlashImage != null) redFlashImage.color = new Color(1, 0, 0, 0.5f);
 
-        if (currentHealth <= 0) StartCoroutine(EpicDeathSequence());
+        if (currentHealth <= 0)
+        {
+            StartCoroutine(EpicDeathSequence());
+        }
     }
 
     public void Heal(int amount)
@@ -87,36 +91,58 @@ public class PlayerHealth : MonoBehaviour
     void UpdateHealthUI()
     {
         if (hearts == null || hearts.Length == 0) return;
-        for (int i = 0; i < hearts.Length; i++) hearts[i].SetActive(i < currentHealth);
+        for (int i = 0; i < hearts.Length; i++)
+            if (hearts[i] != null) hearts[i].SetActive(i < currentHealth);
     }
 
     IEnumerator EpicDeathSequence()
     {
-        // --- เล่นเสียงตายตรงนี้! ---
+        isDead = true;
+
+        // --- 📊 ส่วนการบันทึกสถิติการตาย (Ranking System) ---
+        // ดึงชื่อจาก MainMenuManager ที่บันทึกไว้
+        string playerName = PlayerPrefs.GetString("CurrentPlayerName", "Guest");
+
+        // ดึงจำนวนตายเดิมของชื่อนี้มา แล้วบวก 1
+        int currentDeaths = PlayerPrefs.GetInt("Deaths_" + playerName, 0);
+        PlayerPrefs.SetInt("Deaths_" + playerName, currentDeaths + 1);
+        PlayerPrefs.Save();
+        // ------------------------------------------------
+
+        // เล่นเสียงตาย
         if (audioSource != null && deathSound != null)
         {
-            audioSource.Stop(); // หยุดเสียงอื่นก่อน (เช่นเสียงเดิน/เสียงเพลง)
+            audioSource.Stop();
             audioSource.PlayOneShot(deathSound);
         }
 
+        // ปิดการควบคุมและคอลไลเดอร์
         GetComponent<PlayerController>().enabled = false;
         GetComponent<Collider2D>().enabled = false;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
 
         if (playerSprite != null) { playerSprite.enabled = true; playerSprite.sortingOrder = 100; }
 
-        // ดีดตัวขึ้นฟ้า
-        rb.linearVelocity = new Vector2(0, 15f);
+        // เอฟเฟกต์ดีดตัวขึ้นฟ้าและหมุนตัว
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = 3f;
+            rb.linearVelocity = new Vector2(0, 15f);
+        }
 
         float timer = 0f;
         Vector3 startScale = transform.localScale;
         while (timer < 2.0f)
         {
+            // ตัวขยายใหญ่ขึ้นเรื่อยๆ ตอนตาย
             transform.localScale = Vector3.Lerp(startScale, startScale * 5f, timer / 0.5f);
             transform.Rotate(0, 0, 1000f * Time.deltaTime);
             timer += Time.deltaTime;
             yield return null;
         }
+
+        // เรียกหน้าจอ Game Over
         FindFirstObjectByType<GameOverManager>()?.PlayerDied();
     }
 }

@@ -22,6 +22,7 @@ public class SonicEnemy : MonoBehaviour
     private bool isDead = false;
     private float currentSpeed;
 
+    public AudioClip deathSound;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -97,6 +98,7 @@ public class SonicEnemy : MonoBehaviour
     IEnumerator SquashAndDie()
     {
         isDead = true;
+        if (deathSound != null) AudioSource.PlayClipAtPoint(deathSound, transform.position); // เล่นเสียง ณ จุดตาย
         rb.linearVelocity = Vector2.zero;
         GetComponent<Collider2D>().enabled = false;
         transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 0.2f, 1f);

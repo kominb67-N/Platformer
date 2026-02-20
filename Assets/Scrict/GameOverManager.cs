@@ -5,23 +5,28 @@ public class GameOverManager : MonoBehaviour
 {
     public GameObject gameOverUI;
 
-    void Start()
-    {
-        if (gameOverUI != null) gameOverUI.SetActive(false);
-    }
-
     public void PlayerDied()
     {
-        // ฟังก์ชันนี้จะถูกเรียกหลังจาก Player เล่นท่าตายจบแล้ว
-        if (gameOverUI != null) gameOverUI.SetActive(true);
-
-        // หยุดเวลาตอนนี้แหละ เพื่อให้เมนู Game Over ใช้งานได้ปกติ
+        gameOverUI.SetActive(true);
         Time.timeScale = 0f;
     }
 
-    public void RestartGame()
+    public void RestartFromCheckpoint()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void RestartFromBeginning()
+    {
+        CheckpointManager.hasCheckpoint = false; // ล้างค่าจุดเซฟทิ้ง
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu");
     }
 }

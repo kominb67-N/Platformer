@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement; // ใช้สำหรับเปลี่ยนฉาก
 
 public class LevelCompleteManager : MonoBehaviour
 {
@@ -7,41 +8,38 @@ public class LevelCompleteManager : MonoBehaviour
 
     void Start()
     {
-        // ซ่อนหน้าจอไว้ก่อนตอนเริ่มเกม
-        if (levelCompleteUI != null)
-        {
-            levelCompleteUI.SetActive(false);
-        }
+        if (levelCompleteUI != null) levelCompleteUI.SetActive(false);
     }
 
-    // ฟังก์ชันนี้จะถูกเรียกเมื่อผู้เล่นชนเส้นชัย
     public void ShowLevelComplete()
     {
-        if (levelCompleteUI != null)
-        {
-            levelCompleteUI.SetActive(true); // แสดงหน้า UI
-        }
-
-        Time.timeScale = 0f; // หยุดเวลาในเกม
+        if (levelCompleteUI != null) levelCompleteUI.SetActive(true);
+        Time.timeScale = 0f; // หยุดเวลา
 
         PlayerController player = FindFirstObjectByType<PlayerController>();
         if (player != null)
         {
-            player.enabled = false; // หยุดรับคำสั่งทันที
-
-            // (แถม) สั่งหยุดเดินค้างด้วย เผื่อมีแรงส่งเหลืออยู่
+            player.enabled = false;
             Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
             if (rb != null) rb.linearVelocity = Vector2.zero;
         }
     }
 
-    // ฟังก์ชันใหม่สำหรับปุ่ม "ออกเกม"
+    // --- ส่วนที่เพิ่มใหม่ ---
+    public void RestartLevel()
+    {
+        Time.timeScale = 1f; // ต้องคืนค่าเวลาก่อนโหลดฉากใหม่!
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu"); // เปลี่ยนชื่อให้ตรงกับฉากเมนูของคุณ
+    }
+
     public void QuitGame()
     {
-        // ข้อความนี้จะเด้งในหน้าต่าง Console เพื่อให้รู้ว่าปุ่มทำงานแล้ว
-        Debug.Log("ออกจาเกมแล้ว! (คำสั่งนี้จะเห็นผลตอน Build เกมออกมาเล่นจริงเท่านั้น ในหน้าต่าง Editor เกมจะไม่ปิดลงไปนะครับ)");
-
-        // สั่งปิดแอปพลิเคชัน
         Application.Quit();
     }
 }
