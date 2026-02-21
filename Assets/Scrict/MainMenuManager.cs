@@ -6,17 +6,59 @@ public class MainMenuManager : MonoBehaviour
 {
     [Header("ตั้งค่าการเปลี่ยนฉาก")]
     public string gameSceneName = "Level1";
-    public TMP_InputField nameInputField; // ช่องใส่ชื่อที่สร้างไว้ก่อนหน้านี้
+    public TMP_InputField nameInputField;
 
-    public void PlayGame()
+    [Header("ตั้งค่าปุ่ม")]
+    public GameObject continueButton; // ลากปุ่ม Continue มาใส่ช่องนี้
+
+    void Start()
     {
-        // ระบบจำชื่อเพื่อเก็บสถิติการตาย
+        // เช็กว่าเคยมีเซฟหรือไม่ (1 = มีเซฟ, 0 = ไม่มี)
+        if (PlayerPrefs.GetInt("HasSave", 0) == 1)
+        {
+            if (continueButton != null) continueButton.SetActive(true); // โชว์ปุ่มเล่นต่อ
+        }
+        else
+        {
+            if (continueButton != null) continueButton.SetActive(false); // ซ่อนปุ่มเล่นต่อ
+        }
+    }
+
+    // --- ฟังก์ชัน 1: เริ่มเกมใหม่ (New Game) ---
+    public void NewGame()
+    {
+        SavePlayerName();
+
+        // ล้างข้อมูลเซฟทั้งหมด
+        PlayerPrefs.SetInt("HasSave", 0);
+        PlayerPrefs.Save();
+
+        // บอก CheckpointManager ว่าไม่ต้องใช้จุดเซฟ
+        CheckpointManager.hasCheckpoint = false;
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    // --- ฟังก์ชัน 2: เล่นต่อ (Continue) ---
+    public void ContinueGame()
+    {
+        SavePlayerName();
+
+        // บอก CheckpointManager ว่าให้โหลดจุดเซฟด้วย
+        CheckpointManager.hasCheckpoint = true;
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    private void SavePlayerName()
+    {
         string playerName = nameInputField != null ? nameInputField.text.Trim() : "Guest";
         if (string.IsNullOrEmpty(playerName)) playerName = "Guest";
 
         PlayerPrefs.SetString("CurrentPlayerName", playerName);
 
-        // จัดการรายชื่อรวม
         string allNames = PlayerPrefs.GetString("AllPlayerNames", "");
         if (!allNames.Contains(playerName))
         {
@@ -24,19 +66,11 @@ public class MainMenuManager : MonoBehaviour
             PlayerPrefs.SetString("AllPlayerNames", allNames);
         }
         PlayerPrefs.Save();
-
-        // เริ่มเกม
-        SceneManager.LoadScene(gameSceneName);
-        Time.timeScale = 1f;
     }
 
-    // --- ฟังก์ชันออกเกมที่หายไป ---
     public void QuitGame()
     {
-        // ข้อความเช็กการทำงานใน Unity Editor
-        Debug.Log("ออกจากเกมแล้ว! (คำสั่งนี้จะเห็นผลตอน Build เกมออกมาเล่นจริงเท่านั้น)");
-
-        // สั่งปิดแอปพลิเคชัน
+        Debug.Log("ออกจากเกมแล้ว!");
         Application.Quit();
     }
 }

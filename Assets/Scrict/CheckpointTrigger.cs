@@ -1,15 +1,10 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class CheckpointTrigger : MonoBehaviour
 {
-    public Sprite activeSprite; // รูปตอนเปิดใช้งานแล้ว (เช่น ธงเปลี่ยนสี)
-    private SpriteRenderer sr;
+    public GameObject popUpText;
     private bool isActivated = false;
-
-    void Start()
-    {
-        sr = GetComponent<SpriteRenderer>();
-    }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -17,14 +12,28 @@ public class CheckpointTrigger : MonoBehaviour
         {
             isActivated = true;
 
-            // บันทึกตำแหน่งลงใน Manager
+            // 1. บันทึกให้ระบบปัจจุบันรับรู้
             CheckpointManager.lastCheckpointPos = transform.position;
             CheckpointManager.hasCheckpoint = true;
 
-            // เปลี่ยนรูปโชว์ว่าเซฟแล้ว
-            if (sr != null && activeSprite != null) sr.sprite = activeSprite;
+            // 2. บันทึกลง PlayerPrefs (เครื่องคอม/มือถือ) ให้จำถาวร
+            PlayerPrefs.SetInt("HasSave", 1);
+            PlayerPrefs.SetFloat("SaveX", transform.position.x);
+            PlayerPrefs.SetFloat("SaveY", transform.position.y);
+            PlayerPrefs.SetFloat("SaveZ", transform.position.z);
+            PlayerPrefs.Save();
 
-            Debug.Log("Checkpoint: บันทึกจุดเซฟแล้ว!");
+            if (popUpText != null)
+            {
+                popUpText.SetActive(true);
+                StartCoroutine(HideText());
+            }
         }
+    }
+
+    IEnumerator HideText()
+    {
+        yield return new WaitForSeconds(2f);
+        if (popUpText != null) popUpText.SetActive(false);
     }
 }
